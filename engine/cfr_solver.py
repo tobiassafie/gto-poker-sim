@@ -1,12 +1,14 @@
 # CFR - Counterfactual Regret Minimization (toy model for poker)
-# Toy model - 1 street, 2 player, 3 hand types (value, bluff, medium)
+# Toy model - 1 street, 2 players, 10 hand types (see engine/hand_buckets.py for details)
 import numpy as np
+import random
+from engine.hand_buckets import hand_buckets
 
 class CFRSolver:
     def __init__(self, num_iterations=10000):
         # Initialize the CFR solver
-        self.actions = ['bet', 'check']
-        self.hands = ['value', 'bluff', 'medium']
+        self.actions = ['Bet', 'Check']
+        self.hands = list(hand_buckets.keys())
         self.num_actions = len(self.actions)
         self.num_hands = len(self.hands)
         self.iterations = num_iterations
@@ -31,24 +33,21 @@ class CFRSolver:
         return strategy
 
     def train(self):
-        # Train the CFR solver for the number of iterations
         for _ in range(self.iterations):
             for h in range(self.num_hands):
                 strategy = self.get_strategy(h)
-                action_utils = np.zeros(self.num_actions)
+                hand_name = self.hands[h]
 
-                # Toy utility matrix for each hand type (totally arbitrary for this example)
-                if self.hands[h] == 'value':
-                    action_utils = np.array([1.0, 0.5])  # bet > check
-                elif self.hands[h] == 'bluff':
-                    action_utils = np.array([0.3, 0.4])  # check > bet
-                else:  # 'medium'
-                    action_utils = np.array([0.6, 0.6])  # neutral
+                # Randomly sample utilities from defined ranges
+                bet_min, bet_max = hand_buckets[hand_name][0]
+                check_min, check_max = hand_buckets[hand_name][1]
+                bet_utility = random.uniform(bet_min, bet_max)
+                check_utility = random.uniform(check_min, check_max)
 
-                # Calculate the expected utility for each action
+                action_utils = np.array([bet_utility, check_utility])
                 node_utility = np.dot(strategy, action_utils)
-                # Calculate regrets and update regret sums
                 regrets = action_utils - node_utility
+
                 self.regret_sum[h] += regrets
                 self.strategy_sum[h] += strategy
 
